@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
+        primaryColor: Colors.purple,
         fontFamily: 'Quicksand',
         textTheme: ThemeData.light().textTheme.copyWith(
               headline6: TextStyle(
@@ -18,6 +19,7 @@ class MyApp extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
+              button: TextStyle(color: Colors.white),
             ),
         appBarTheme: AppBarTheme(
           textTheme: ThemeData.light().textTheme.copyWith(
@@ -58,7 +60,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  final List<Expense> _userTransaction = [
+  final List<Expense> _userTransactions = [
     // Expense(amount: 12.69, date: DateTime.now(), id: 'ASDSD', title: 'Food'),
     // Expense(amount: 22.74, date: DateTime.now(), id: 'sdas', title: 'Bag'),
     // Expense(
@@ -66,20 +68,26 @@ class _HomePageState extends State<HomePage> {
   ];
 
   List<Expense> get _recentTransaction {
-    return _userTransaction.where((element) {
+    return _userTransactions.where((element) {
       return element.date.isAfter(DateTime.now().subtract(Duration(days: 7)));
     }).toList();
   }
 
-  void _addNewTransaction(String title, double amount) {
+  void _addNewTransaction(String title, double amount, DateTime date) {
     var trx = Expense(
       amount: amount,
-      date: DateTime.now(),
+      date: date,
       id: DateTime.now().toString(),
       title: title,
     );
     setState(() {
-      _userTransaction.add(trx);
+      _userTransactions.add(trx);
+    });
+  }
+
+  void _deleteTransacion(String id) {
+    setState(() {
+      _userTransactions.removeWhere((element) => element.id == id);
     });
   }
 
@@ -109,8 +117,13 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Chart(recentTransaction: _recentTransaction,),
-            TransactionList(userTransaction: _userTransaction),
+            Chart(
+              recentTransaction: _recentTransaction,
+            ),
+            TransactionList(
+              userTransaction: _userTransactions,
+              delete: _deleteTransacion,
+            ),
           ],
         ),
       ),
