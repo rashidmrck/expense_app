@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:expense_app/model/expense.dart';
 import 'package:expense_app/widgets/chart.dart';
 import 'package:expense_app/widgets/new_transaction.dart';
 import 'package:expense_app/widgets/transaction_list.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 main() => runApp(MyApp());
@@ -43,18 +46,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  void _showBottomSheet(BuildContext context) {
+  bool _showChart = true;
+
+  void _showBottomSheet() {
     showModalBottomSheet(
-      context: context,
-      builder: (bcontext) {
-        return NewTransaction(
-          addTransaction: _addNewTransaction,
-        );
-      },
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topRight: Radius.circular(20),
-          topLeft: Radius.circular(20),
+          borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
+      )),
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SingleChildScrollView(
+        child: Container(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: NewTransaction(
+            addTransaction: _addNewTransaction,
+          ),
         ),
       ),
     );
@@ -93,40 +102,116 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      appBar: AppBar(
-        actions: <Widget>[
-          IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () => _showBottomSheet(context)),
-        ],
-        title: Text('Expences'),
+    final mediaquery = MediaQuery.of(context);
+    final _landscape = mediaquery.orientation == Orientation.landscape;
+
+    final PreferredSizeWidget _appBar = Platform.isIOS
+        ? CupertinoNavigationBar(
+            middle: Text('Expences'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                GestureDetector(
+                  child: Icon(CupertinoIcons.add),
+                  onTap: () => _showBottomSheet(),
+                ),
+              ],
+            ),
+          )
+        : AppBar(
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.add),
+                onPressed: () => _showBottomSheet(),
+              ),
+            ],
+            title: Text('Expences'),
+          );
+
+    final _tranListContainer = Container(
+      height: (mediaquery.size.height -
+              _appBar.preferredSize.height -
+              mediaquery.padding.top) *
+          .7,
+      child: TransactionList(
+        userTransaction: _userTransactions,
+        delete: _deleteTransacion,
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.purple,
-        child: Text(
-          'Expence',
-          style: TextStyle(
-            fontSize: 11,
-          ),
-        ),
-        onPressed: () => _showBottomSheet(context),
-      ),
-      body: SingleChildScrollView(
+    );
+
+    final _pageBody = SafeArea(
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Chart(
-              recentTransaction: _recentTransaction,
-            ),
-            TransactionList(
-              userTransaction: _userTransactions,
-              delete: _deleteTransacion,
-            ),
+            if (_landscape)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'Show Chart',
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  Switch.adaptive(
+                      activeColor: Theme.of(context).primaryColor,
+                      value: _showChart,
+                      onChanged: (value) {
+                        setState(() {
+                          _showChart = value;
+                        });
+                      })
+                ],
+              ),
+            if (!_landscape)
+              Container(
+                height: (mediaquery.size.height -
+                        _appBar.preferredSize.height -
+                        mediaquery.padding.top) *
+                    .3,
+                child: Chart(
+                  recentTransaction: _recentTransaction,
+                ),
+              ),
+            if (!_landscape) _tranListContainer,
+            if (_landscape)
+              _showChart
+                  ? Container(
+                      height: (mediaquery.size.height -
+                              _appBar.preferredSize.height -
+                              mediaquery.padding.top) *
+                          .5,
+                      child: Chart(
+                        recentTransaction: _recentTransaction,
+                      ),
+                    )
+                  : _tranListContainer,
           ],
         ),
       ),
     );
+
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            child: _pageBody,
+            navigationBar: _appBar,
+          )
+        : Scaffold(
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            appBar: _appBar,
+            floatingActionButton: Platform.isIOS
+                ? Container()
+                : FloatingActionButton(
+                    backgroundColor: Colors.purple,
+                    child: Text(
+                      'Expence',
+                      style: TextStyle(
+                        fontSize: 11,
+                      ),
+                    ),
+                    onPressed: () => _showBottomSheet(),
+                  ),
+            body: _pageBody,
+          );
   }
 }

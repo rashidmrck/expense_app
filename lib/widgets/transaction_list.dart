@@ -13,21 +13,26 @@ class TransactionList extends StatelessWidget {
     return Container(
       height: 520,
       child: userTransaction.isEmpty
-          ? Column(
-              children: <Widget>[
-                Text('No transaction found.'),
-                SizedBox(
-                  height: 20,
-                ),
-                Container(
-                  height: 200,
-                  child: Image.asset(
-                    'assets/images/waiting.png',
-                    fit: BoxFit.cover,
+          ? LayoutBuilder(builder: (context, constrant) {
+              return Column(
+                children: <Widget>[
+                  Text(
+                    'No transaction found.',
+                    style: Theme.of(context).textTheme.headline6,
                   ),
-                )
-              ],
-            )
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Container(
+                    height: constrant.maxHeight * .7,
+                    child: Image.asset(
+                      'assets/images/waiting.png',
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                ],
+              );
+            })
           : ListView.builder(
               physics: BouncingScrollPhysics(),
               itemCount: userTransaction.length,
@@ -47,6 +52,9 @@ class TransactionList extends StatelessWidget {
                                 userTransaction[index]
                                     .amount
                                     .toStringAsFixed(2),
+                            style: TextStyle(
+                                color:
+                                    Theme.of(context).textTheme.button.color),
                           ),
                         ),
                       ),
